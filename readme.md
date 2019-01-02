@@ -24,6 +24,6 @@
 	- 使用masm编译，link链接后生成的可执行文件。
 
 ##### 仿真演示
-![演示](http://file.fujie.bid/%E4%BB%BF%E7%9C%9F%E6%BC%94%E7%A4%BA.gif)
+[仿真演示图片](http://file.fujie.bid/%E4%BB%BF%E7%9C%9F%E6%BC%94%E7%A4%BA.gif)
 ##### 真实电路演示
-![](http://)
+[真实电路演示图片](http://)
