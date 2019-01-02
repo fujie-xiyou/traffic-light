@@ -3,19 +3,26 @@
 ;将不闪烁的地方认为是使用相同的值在闪烁
 ;然后通过在过程 SHOW7SEG中使用两次 DELAY(每次0.5秒) 
 ;来实现闪烁
-APORT  EQU  0000H
-BPORT  EQU  0002H
-CPORT  EQU  0004H
+
+
+;8255 A，B，C口以及控制口的口地址
+;应该根据实际的连线情况(cs接口)修改
+APORT  EQU  0000H 
+BPORT  EQU  0002H 
+CPORT  EQU  0004H 
 CTRLP  EQU  0006H
 
 DATA SEGMENT
+
+	;数码管字形代码(0-F)
 	TAB DB 3FH, 06H, 5BH, 4FH, 66H, 6DH, 7DH, 07H, 7FH, 6FH
 		DB 77H, 7CH, 39H, 5EH, 79H, 71H
-	NS DW 0
-	EW DW 0
-	I  DW 0
-	INIT DW 0
-	FLASH DW 0
+	NS DW 0 ;控制南北方向的数码管从几开始倒计时
+	EW DW 0 ;控制东西方向的数码管从几开始倒计时
+	I  DW 0 ;控制本轮倒计时共进行几秒
+	
+	INIT DW 0 ;控制红绿灯不闪烁的情况下谁亮
+	FLASH DW 0 ;控制某一绿灯闪烁
 	FLASH_7SEG DW 0 ;控制数字闪烁 0代表不闪烁 大于0代表南北闪烁  小于0代表东西闪烁
 DATA ENDS
 
@@ -36,8 +43,8 @@ START:
     OUT DX, AL
 LPT:        
     MOV DX, APORT
-	;-绿|红
-    MOV INIT ,0AH
+	;-绿|红   -代表东西方向 | 代表南北方向  下同
+    MOV INIT ,0AH ;东西方向绿灯亮 南北方向红灯亮
 	MOV FLASH,0AH
 	MOV FLASH_7SEG,0
 	MOV NS,9
@@ -46,7 +53,7 @@ LPT:
 	CALL SHOW7SEG
 
 	;-绿闪|红
-	MOV INIT ,0AH
+	MOV INIT ,0AH 
 	MOV FLASH,08H
 	MOV FLASH_7SEG,-1
 	MOV NS,6
@@ -100,7 +107,7 @@ DELAY:
 LL:
 	MOV BX,CX
 	PUSH CX
-	MOV CX,0CC00H ;内层循环次数
+	MOV CX,0CC00H ;内层循环次数 也可以用来调整间隔时间
 LL2:
 	NOP
 	LOOP LL2
@@ -120,6 +127,7 @@ SHOW7SEG:
 	MOV BX,NS
 	MOV BP,EW
 LOOPS:
+;前半秒红绿灯以及数码管点亮情况
 	MOV DX,APORT
 	MOV AX,INIT
 	OUT DX,AX
@@ -131,23 +139,26 @@ LOOPS:
 	OUT DX,AX
 	CALL DELAY
 	
-	;闪烁(对应灯灭半秒)
 	
+;后半秒红绿灯以及数码管点亮情况(实现闪烁)
 	;判断数码管如何闪烁
 	CMP FLASH_7SEG,0 ;
 	JL EWFALSH ;小于0代表东西闪烁
 	CMP FLASH_7SEG,0
 	JG SNFALSH ;大于0代表南北闪烁
 	JMP NEXT
-EWFALSH:
+
+EWFALSH: ;东西方向的数码管闪烁
 	MOV DX,BPORT
 	MOV AX,0
 	OUT DX,AX
 	JMP NEXT
-SNFALSH:
+
+SNFALSH: ;南北方向的数码管闪烁
 	MOV DX,CPORT
 	MOV AX,0
 	OUT DX,AX
+
 NEXT:
 	MOV AX,FLASH
 	MOV DX,APORT
